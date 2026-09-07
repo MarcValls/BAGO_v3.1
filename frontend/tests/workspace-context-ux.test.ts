@@ -27,9 +27,14 @@ describe('workspace and context UX contract', () => {
   });
 
   it('does not advertise semantic workspace filters without backend attributes', () => {
-    expect(readFileSync(new URL('../src/features/sections.tsx', import.meta.url), 'utf8')).not.toContain("id: 'modified'");
-    expect(readFileSync(new URL('../src/features/sections.tsx', import.meta.url), 'utf8')).not.toContain("id: 'in-context'");
-    expect(readFileSync(new URL('../src/features/sections.tsx', import.meta.url), 'utf8')).not.toContain("id: 'with-evidence'");
+    const toolbar = readFileSync(new URL('../src/features/workspace/WorkspaceToolbar.tsx', import.meta.url), 'utf8');
+    const explorer = readFileSync(new URL('../src/features/workspace/FileExplorer.tsx', import.meta.url), 'utf8');
+    const types = readFileSync(new URL('../src/features/workspace/workspaceTypes.ts', import.meta.url), 'utf8');
+    for (const unsupported of ['modified', 'in-context', 'with-evidence']) {
+      expect(toolbar).not.toContain(unsupported);
+      expect(explorer).not.toContain(`case '${unsupported}'`);
+      expect(types).not.toContain(`| '${unsupported}'`);
+    }
   });
 
   it('keeps advanced context capabilities behind progressive disclosure', () => {

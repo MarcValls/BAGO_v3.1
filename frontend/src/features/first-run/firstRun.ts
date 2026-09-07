@@ -1,6 +1,7 @@
 import type { BackendProviders, UiBootstrapSnapshot } from '@/contracts/backend';
 
 export const FIRST_RUN_KEY = 'bago.first-run.v1.completed';
+export const FIRST_RUN_DISMISSED_KEY = 'bago.first-run.v1.dismissed';
 
 export interface FirstRunProviderOption {
   id: string;
@@ -15,11 +16,15 @@ export interface FirstRunProviderOption {
 }
 
 export function shouldShowFirstRun(storage: Pick<Storage, 'getItem'> | null): boolean {
-  return storage?.getItem(FIRST_RUN_KEY) !== 'true';
+  return storage?.getItem(FIRST_RUN_KEY) !== 'true' && storage?.getItem(FIRST_RUN_DISMISSED_KEY) !== 'true';
 }
 
 export function markFirstRunComplete(storage: Pick<Storage, 'setItem'> | null): void {
   storage?.setItem(FIRST_RUN_KEY, 'true');
+}
+
+export function markFirstRunDismissed(storage: Pick<Storage, 'setItem'> | null): void {
+  storage?.setItem(FIRST_RUN_DISMISSED_KEY, 'true');
 }
 
 export function firstRunProviderOptions(providers: BackendProviders | null): FirstRunProviderOption[] {

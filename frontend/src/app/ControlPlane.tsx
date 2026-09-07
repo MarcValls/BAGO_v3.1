@@ -23,7 +23,7 @@ import { normalizeChatResponse } from '@/shared/chatResponse';
 import { friendlyErrorMessage } from '@/shared/friendly-error';
 import { EMPTY_CLIPBOARD, readClipboardPayload, type ClipboardPayload } from '@/shared/clipboard';
 import { FirstRunWizard } from '@/features/first-run/FirstRunWizard';
-import { markFirstRunComplete, shouldShowFirstRun, shouldSkipAutomaticFirstRun } from '@/features/first-run/firstRun';
+import { markFirstRunComplete, markFirstRunDismissed, shouldShowFirstRun, shouldSkipAutomaticFirstRun } from '@/features/first-run/firstRun';
 import { createShellActions, resolveNavigationShortcut, isPanelDestination, type BagoAction } from '@/navigation/actionRegistry';
 import { WorkspacePickerDialog } from '@/features/workspace/WorkspacePickerDialog';
 import { canPersistWorkspaceAuthority } from '@/shared/workspaceAuthority';
@@ -1728,7 +1728,7 @@ export function ControlPlane() {
           client={clientRef.current}
           onChooseWorkspace={chooseWorkspacePath}
           onClose={() => {
-            markFirstRunComplete(window.localStorage);
+            markFirstRunDismissed(window.localStorage);
             setFirstRunDismissed(true);
             setFirstRunRequested(false);
             setFirstRunOpen(false);

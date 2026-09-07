@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { FIRST_RUN_KEY, firstRunInitialStep, firstRunProviderOptions, markFirstRunComplete, shouldShowFirstRun, shouldSkipAutomaticFirstRun } from '../src/features/first-run/firstRun';
+import { FIRST_RUN_DISMISSED_KEY, FIRST_RUN_KEY, firstRunInitialStep, firstRunProviderOptions, markFirstRunComplete, markFirstRunDismissed, shouldShowFirstRun, shouldSkipAutomaticFirstRun } from '../src/features/first-run/firstRun';
 
 describe('first run contract', () => {
   it('remains visible until the user completes it', () => {
@@ -8,6 +8,15 @@ describe('first run contract', () => {
     expect(shouldShowFirstRun(storage)).toBe(true);
     markFirstRunComplete(storage);
     expect(values.get(FIRST_RUN_KEY)).toBe('true');
+    expect(shouldShowFirstRun(storage)).toBe(false);
+  });
+
+  it('does not confuse dismissal with completion', () => {
+    const values = new Map<string, string>();
+    const storage = { getItem: (key: string) => values.get(key) ?? null, setItem: (key: string, value: string) => values.set(key, value) };
+    markFirstRunDismissed(storage);
+    expect(values.get(FIRST_RUN_DISMISSED_KEY)).toBe('true');
+    expect(values.get(FIRST_RUN_KEY)).toBeUndefined();
     expect(shouldShowFirstRun(storage)).toBe(false);
   });
 

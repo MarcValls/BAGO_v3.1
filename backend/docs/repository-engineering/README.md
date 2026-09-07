@@ -28,6 +28,10 @@ the repository's existing contracts.
 | `MODULE_CONTRACT.md` | Template for documenting a logical module boundary |
 | `ARCHITECTURE_PRESSURE.md` | Multi-signal detector for modularization candidates |
 | `REFACTOR_PROTOCOL.md` | Characterization, compatibility and behavior-preservation protocol |
+| `CHANGE_UNIT.example.json` | Non-active prepared example showing the expected operation shape |
 
 These artifacts are proposals until explicitly adopted by repository
 governance. They must not be treated as permission to restructure the tree.
+
+The example change unit is deliberately `PREPARED`; it is illustrative only
+and does not claim that an operation was executed.

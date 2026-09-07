@@ -57,7 +57,7 @@
       "uniqueItems": true
     },
     "closure": {
-      "enum": ["EXECUTED", "VERIFIED", "VALIDATED"]
+      "enum": ["PREPARED", "EXECUTED", "VERIFIED", "VALIDATED"]
     },
     "behavior_change_authorized": {
       "type": "boolean",
