@@ -70,6 +70,7 @@ INCLUDE_DIRS = [
     ".bago/core",
     ".bago/knowledge",
     ".bago/providers",
+    ".bago/roles",
     ".bago/tools",
     "docs",
     "scripts",

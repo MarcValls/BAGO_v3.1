@@ -5,6 +5,7 @@ import argparse
 import io
 import json
 import os
+import re
 import shutil
 import sys
 import urllib.error
@@ -33,6 +34,7 @@ def _resolve_ollama_models_dir() -> Path:
 OLLAMA_MODELS_DIR = _resolve_ollama_models_dir()
 SCAN_ROOT = Path.cwd()
 BAGO_ROOT = SCAN_ROOT / '.bago'
+FRAMEWORK_BAGO_ROOT = Path(__file__).resolve().parents[1]
 STATE_DIR = BAGO_ROOT / 'state'
 ROUTER_HISTORY = STATE_DIR / 'route_history.json'
 ROUTER_POLICY = STATE_DIR / 'llm_config.json'
@@ -45,8 +47,27 @@ _CABINET_POLICIES = (
         'workflow_system_change',
         (
             'role_government_orquestador_central',
-            'role_production_arquitecto',
             'role_supervision_auditor_canonico',
+            'role_production_validador',
+        ),
+    ),
+    (
+        'organization',
+        ('organize', 'organization', 'organización', 'organizar'),
+        'workflow_execution',
+        (
+            'role_government_orquestador_central',
+            'role_production_organizador',
+            'role_production_validador',
+        ),
+    ),
+    (
+        'project_bootstrap',
+        ('bootstrap this project', 'bootstrap project', 'project bootstrap', 'bootstrap', 'inicializa el proyecto'),
+        'workflow_bootstrap_repo_first',
+        (
+            'role_government_orquestador_central',
+            'role_production_analista',
             'role_production_validador',
         ),
     ),
@@ -256,7 +277,10 @@ def _record_route(route: dict) -> None:
 
 
 def _load_active_roles() -> dict[str, dict]:
-    manifest_path = BAGO_ROOT / 'roles' / 'manifest.json'
+    framework_manifest = FRAMEWORK_BAGO_ROOT / 'roles' / 'manifest.json'
+    project_manifest = BAGO_ROOT / 'roles' / 'manifest.json'
+    manifest_root = FRAMEWORK_BAGO_ROOT if framework_manifest.is_file() else BAGO_ROOT
+    manifest_path = manifest_root / 'roles' / 'manifest.json'
     manifest = load_json(manifest_path, {})
     roles = manifest.get('roles') if isinstance(manifest, dict) else None
     if not isinstance(roles, dict):
@@ -267,7 +291,7 @@ def _load_active_roles() -> dict[str, dict]:
         if not isinstance(role, dict) or role.get('status') != 'active':
             continue
         relative_file = role.get('file')
-        if not isinstance(relative_file, str) or not (BAGO_ROOT / 'roles' / relative_file).is_file():
+        if not isinstance(relative_file, str) or not (manifest_root / 'roles' / relative_file).is_file():
             raise RuntimeError(f'Active role {role_id!r} has no readable role file')
         active_roles[role_id] = role
     return active_roles
@@ -280,12 +304,21 @@ def plan_cabinet(task: str) -> dict:
         raise ValueError('Cabinet planning requires a non-empty task')
 
     lowered = normalized_task.lower()
-    primary_request = lowered.removeprefix('please ').removeprefix('por favor ')
-    primary_verb = primary_request.split(maxsplit=1)[0]
-    explicit_change_request = primary_verb in {
+    primary_request = re.sub(
+        r'^[\s,.:;]*(?:(?:please|por favor|can you|could you|would you|puedes|podrías)[\s,.:;]+)+',
+        '',
+        lowered,
+    ).strip(' ,:;')
+    change_terms = {
         'implement', 'fix', 'refactor', 'build', 'write', 'edit',
         'implementa', 'corrige', 'refactoriza', 'construye', 'escribe', 'edita',
     }
+    primary_verb = primary_request.split(maxsplit=1)[0] if primary_request else ''
+    explicit_change_request = primary_verb in change_terms
+    high_risk_change = any(term in lowered for term in (
+        'high-risk', 'high risk', 'cross-module', 'cross module',
+        'production', 'destructive', 'alto riesgo', 'entre módulos',
+    ))
     task_type, workflow, role_ids = 'analysis', 'workflow_analysis', (
         'role_government_orquestador_central',
         'role_production_analista',
@@ -299,6 +332,14 @@ def plan_cabinet(task: str) -> dict:
         if (candidate_type == 'execution' and explicit_change_request) or any(term in lowered for term in terms):
             task_type, workflow, role_ids = candidate_type, candidate_workflow, candidate_role_ids
             break
+
+    if task_type == 'system_change' and high_risk_change:
+        role_ids = (
+            'role_government_orquestador_central',
+            'role_production_arquitecto',
+            'role_supervision_auditor_canonico',
+            'role_production_validador',
+        )
 
     active_roles = _load_active_roles()
     missing_roles = [role_id for role_id in role_ids if role_id not in active_roles]
