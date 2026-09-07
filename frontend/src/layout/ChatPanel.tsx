@@ -79,6 +79,7 @@ interface Props {
   isDocked?: boolean;
   pastedImage?: { dataUrl: string; mimeType: string } | null;
   onRemovePastedImage?: () => void;
+  onPreparePlan?: (task: string) => Promise<void>;
 }
 
 function summarize(message: Record<string, unknown>): string {
@@ -212,6 +213,7 @@ function TurnArticle(props: TurnArticleProps) {
 
 export function ChatPanel(props: Props) {
   const [modelChanging, setModelChanging] = useState(false);
+  const [preparingPlan, setPreparingPlan] = useState(false);
   const [modelError, setModelError] = useState('');
   const [modelQuery, setModelQuery] = useState('');
   const [modelPickerOpen, setModelPickerOpen] = useState(false);
@@ -252,6 +254,15 @@ export function ChatPanel(props: Props) {
   const conversationItems = props.conversations?.conversations || [];
   const activeConversationId = props.conversations?.active_conversation_id || props.history?.conversation_id || '';
   const activeConversation = conversationItems.find((item) => item.conversation_id === activeConversationId) || null;
+  const handlePreparePlan = async () => {
+    if (!props.onPreparePlan || preparingPlan) return;
+    setPreparingPlan(true);
+    try {
+      await props.onPreparePlan(draft.trim());
+    } finally {
+      setPreparingPlan(false);
+    }
+  };
   const updateTimelinePosition = useCallback(() => {
     const timeline = timelineRef.current;
     if (!timeline) return;
@@ -628,6 +639,19 @@ export function ChatPanel(props: Props) {
                 </span>
                 {!canChat && <span className="chat-composer-blocked-hint">{chatBlockedHint(props.snapshot)}</span>}
               </div>
+              {draft.trim().length > 20 && props.onPreparePlan && (
+                <button
+                  className="secondary-button chat-prepare-plan-button"
+                  type="button"
+                  onClick={() => void handlePreparePlan()}
+                  disabled={preparingPlan}
+                  aria-busy={preparingPlan}
+                  title="Convertir este borrador en un plan del Pipeline sin re-escribirlo"
+                >
+                  <Icon name="pipeline" size={14} />
+                  <span>{preparingPlan ? 'Preparando…' : 'Preparar plan'}</span>
+                </button>
+              )}
               <button
                 className="primary-button chat-send-button"
                 type="button"
