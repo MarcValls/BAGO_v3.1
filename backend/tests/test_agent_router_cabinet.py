@@ -57,3 +57,35 @@ def test_plan_uses_the_canonical_workflow_id(router, task, workflow_file):
 
     assert canonical_id is not None
     assert router.plan_cabinet(task)['workflow'] == canonical_id.group(1)
+
+
+@pytest.mark.parametrize(('task', 'task_type', 'workflow', 'expected_roles'), [
+    ('organize the repository', 'organization', 'workflow_execution', {'role_production_organizador'}),
+    ('bootstrap this project', 'project_bootstrap', 'workflow_bootstrap_repo_first', {'role_production_analista'}),
+])
+def test_canonical_task_types_have_explicit_policies(router, task, task_type, workflow, expected_roles):
+    plan = router.plan_cabinet(task)
+    role_ids = {role['id'] for role in plan['roles']}
+
+    assert plan['task_type'] == task_type
+    assert plan['workflow'] == workflow
+    assert expected_roles <= role_ids
+
+
+def test_system_change_keeps_architect_as_high_risk_escalation_only(router):
+    ordinary = {role['id'] for role in router.plan_cabinet('review the backend contract')['roles']}
+    risky = {role['id'] for role in router.plan_cabinet('implement a high-risk cross-module system change')['roles']}
+
+    assert 'role_production_arquitecto' not in ordinary
+    assert 'role_production_arquitecto' in risky
+
+
+@pytest.mark.parametrize('task', [
+    'Can you implement a widget and run tests?',
+    'Could you fix the failing test?',
+    'Por favor, corrige el parser y verifica las pruebas.',
+])
+def test_polite_change_requests_keep_generator_role(router, task):
+    role_ids = {role['id'] for role in router.plan_cabinet(task)['roles']}
+
+    assert 'role_production_generador' in role_ids
