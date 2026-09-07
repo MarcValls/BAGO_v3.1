@@ -53,6 +53,7 @@
     },
     "required_evidence": {
       "type": "array",
+      "minItems": 1,
       "items": { "type": "string", "minLength": 1 },
       "uniqueItems": true
     },
@@ -69,6 +70,20 @@
     },
     "notes": {
       "type": "string"
+    },
+    "candidate_sha": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{40}$"
+    },
+    "verification_receipts": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "type": "string", "minLength": 1 },
+      "uniqueItems": true
+    },
+    "acceptance_authority": {
+      "type": "string",
+      "minLength": 1
     }
   },
   "allOf": [
@@ -95,6 +110,24 @@
         "properties": {
           "public_contract_changes": { "const": true }
         }
+      }
+    },
+    {
+      "if": {
+        "properties": { "closure": { "enum": ["VERIFIED", "VALIDATED"] } },
+        "required": ["closure"]
+      },
+      "then": {
+        "required": ["candidate_sha", "verification_receipts"]
+      }
+    },
+    {
+      "if": {
+        "properties": { "closure": { "const": "VALIDATED" } },
+        "required": ["closure"]
+      },
+      "then": {
+        "required": ["acceptance_authority"]
       }
     }
   ]

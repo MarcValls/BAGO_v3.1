@@ -213,6 +213,7 @@ function TurnArticle(props: TurnArticleProps) {
 
 export function ChatPanel(props: Props) {
   const [modelChanging, setModelChanging] = useState(false);
+  const [preparingPlan, setPreparingPlan] = useState(false);
   const [modelError, setModelError] = useState('');
   const [modelQuery, setModelQuery] = useState('');
   const [modelPickerOpen, setModelPickerOpen] = useState(false);
@@ -253,6 +254,15 @@ export function ChatPanel(props: Props) {
   const conversationItems = props.conversations?.conversations || [];
   const activeConversationId = props.conversations?.active_conversation_id || props.history?.conversation_id || '';
   const activeConversation = conversationItems.find((item) => item.conversation_id === activeConversationId) || null;
+  const handlePreparePlan = async () => {
+    if (!props.onPreparePlan || preparingPlan) return;
+    setPreparingPlan(true);
+    try {
+      await props.onPreparePlan(draft.trim());
+    } finally {
+      setPreparingPlan(false);
+    }
+  };
   const updateTimelinePosition = useCallback(() => {
     const timeline = timelineRef.current;
     if (!timeline) return;
@@ -633,11 +643,13 @@ export function ChatPanel(props: Props) {
                 <button
                   className="secondary-button chat-prepare-plan-button"
                   type="button"
-                  onClick={() => void props.onPreparePlan?.(draft.trim())}
+                  onClick={() => void handlePreparePlan()}
+                  disabled={preparingPlan}
+                  aria-busy={preparingPlan}
                   title="Convertir este borrador en un plan del Pipeline sin re-escribirlo"
                 >
                   <Icon name="pipeline" size={14} />
-                  <span>Preparar plan</span>
+                  <span>{preparingPlan ? 'Preparando…' : 'Preparar plan'}</span>
                 </button>
               )}
               <button
